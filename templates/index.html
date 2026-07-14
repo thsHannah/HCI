@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <title>FLOWDRAW (Python 版)</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div id="main">
+    <h1>FLOWDRAW 🌈</h1>
+
+    <div id="draw_area">
+      <img id="video_feed" src="{{ url_for('video_feed') }}" width="1280" height="720" alt="video stream">
+
+      <div id="side">
+        <button id="clear_button" class="side_button" type="button">Clear<br>Board</button>
+        <button id="increase_brush_size" class="side_button" type="button">+<br>Increase Brush Size</button>
+        <button id="decrease_brush_size" class="side_button" type="button">-<br>Decrease Brush Size</button>
+        <button id="colorButton" class="side_button" type="button">
+          Brush Color <span id="colorIndicator" class="color-circle"></span>
+        </button>
+        <div id="colorPalette" class="palette hidden">
+          <div class="color-option" data-rgb="255,0,0" style="background:#FF0000;"></div>
+          <div class="color-option" data-rgb="255,87,51" style="background:#FF5733;"></div>
+          <div class="color-option" data-rgb="230,57,70" style="background:#E63946;"></div>
+          <div class="color-option" data-rgb="255,165,0" style="background:#FFA500;"></div>
+          <div class="color-option" data-rgb="255,215,0" style="background:#FFD700;"></div>
+          <div class="color-option" data-rgb="0,255,0" style="background:#00FF00;"></div>
+          <div class="color-option" data-rgb="46,204,113" style="background:#2ECC71;"></div>
+          <div class="color-option" data-rgb="0,0,255" style="background:#0000FF;"></div>
+          <div class="color-option" data-rgb="52,152,219" style="background:#3498DB;"></div>
+          <div class="color-option" data-rgb="255,255,255" style="background:#FFFFFF;"></div>
+        </div>
+        <button id="download_image_button" class="side_button" type="button">Download<br>Image</button>
+        <button id="dl_button" class="side_button" type="button">Details</button>
+      </div>
+
+      <div id="myModal" class="modal">
+        <div class="modal-content">
+          <span class="close" id="close_button">&times;</span>
+          <ul>
+            <li>此版本改由 Python 後端(Flask + OpenCV + MediaPipe)處理攝影機與手部追蹤</li>
+            <li>攝影機畫面來自「執行這支伺服器程式的機器」，不是你瀏覽器裡的攝影機</li>
+            <li>如果手未完整地出現在畫面中，手部偵測效果會很差</li>
+            <li>在繪畫時避免彎曲手指，否則可能影響手部偵測結果</li>
+            <li>握拳會先在伺服器端準備好目前畫面的截圖，按「Download Image」才會真正下載</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <p id="status_line">筆刷大小: <span id="brush_size_display">5</span></p>
+  </div>
+
+  <script>
+    const el = (id) => document.getElementById(id);
+    const colorIndicator = el('colorIndicator');
+    const colorPalette = el('colorPalette');
+
+    el('colorButton').addEventListener('click', () => colorPalette.classList.toggle('hidden'));
+
+    document.querySelectorAll('.color-option').forEach(opt => {
+      opt.addEventListener('click', async () => {
+        const [r, g, b] = opt.dataset.rgb.split(',').map(Number);
+        colorIndicator.style.backgroundColor = `rgb(${r},${g},${b})`;
+        colorPalette.classList.add('hidden');
+        await fetch('/api/color', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ r, g, b })
+        });
+      });
+    });
+
+    el('clear_button').onclick = () => fetch('/api/clear', { method: 'POST' });
+
+    el('increase_brush_size').onclick = async () => {
+      const res = await fetch('/api/brush/increase', { method: 'POST' });
+      const data = await res.json();
+      el('brush_size_display').textContent = data.brush_size;
+    };
+
+    el('decrease_brush_size').onclick = async () => {
+      const res = await fetch('/api/brush/decrease', { method: 'POST' });
+      const data = await res.json();
+      el('brush_size_display').textContent = data.brush_size;
+    };
+
+    el('download_image_button').onclick = () => {
+      window.location.href = '/api/download_image';
+    };
+
+    el('dl_button').onclick = () => { el('myModal').style.display = 'block'; };
+    el('close_button').onclick = () => { el('myModal').style.display = 'none'; };
+    window.onclick = (event) => {
+      if (event.target === el('myModal')) el('myModal').style.display = 'none';
+    };
+
+    // 每秒同步一次目前筆刷大小（例如另一個分頁改了狀態）
+    setInterval(async () => {
+      const res = await fetch('/api/status');
+      const data = await res.json();
+      el('brush_size_display').textContent = data.brush_size;
+    }, 2000);
+  </script>
+</body>
+</html>
