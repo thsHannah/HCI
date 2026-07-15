@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FLOWDRAW 隔空畫畫｜人機互動教材</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0D1F;
+    --bg-panel:#131832;
+    --bg-panel2:#1A2140;
+    --line: rgba(255,255,255,0.09);
+    --cyan:#2FE7D9;
+    --magenta:#FF3E9C;
+    --yellow:#FFD23F;
+    --green:#4CE07A;
+    --orange:#FFA24C;
+    --text:#F3F5FC;
+    --text-dim:#9BA2C4;
+    --radius:20px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% -10%, rgba(47,231,217,0.16), transparent 45%),
+      radial-gradient(circle at 90% 10%, rgba(255,62,156,0.14), transparent 40%),
+      var(--bg);
+    color:var(--text);
+    font-family:"Noto Sans TC","Fredoka",sans-serif;
+    line-height:1.7;
+  }
+  .num{font-family:"Fredoka","Noto Sans TC",sans-serif;}
+  a{color:inherit;}
+  img,svg{max-width:100%; display:block;}
+
+  /* ---------- NAV ---------- */
+  nav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(10,13,31,0.86);
+    backdrop-filter: blur(10px);
+    border-bottom:1px solid var(--line);
+    overflow-x:auto;
+    white-space:nowrap;
+  }
+  nav .inner{
+    display:flex; align-items:center; gap:4px;
+    max-width:1080px; margin:0 auto; padding:12px 20px;
+  }
+  nav .brand{
+    font-weight:900; font-size:16px; margin-right:18px;
+    display:flex; align-items:center; gap:8px; flex-shrink:0;
+  }
+  nav .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--magenta); box-shadow:0 0 12px var(--magenta);}
+  nav a.link{
+    font-size:13px; color:var(--text-dim); text-decoration:none;
+    padding:7px 12px; border-radius:999px; flex-shrink:0;
+  }
+  nav a.link:hover{ background:var(--bg-panel2); color:var(--text);}
+
+  section{padding:64px 20px; max-width:1080px; margin:0 auto;}
+  .kicker{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:"Fredoka"; font-size:13px; letter-spacing:.08em;
+    color:var(--cyan); text-transform:uppercase; font-weight:600;
+    background:rgba(47,231,217,0.1); border:1px solid rgba(47,231,217,0.3);
+    padding:6px 14px; border-radius:999px; margin-bottom:18px;
+  }
+  h1{font-size:clamp(34px,6vw,56px); font-weight:900; margin:0 0 14px; line-height:1.2;}
+  h2{font-size:clamp(26px,4vw,34px); font-weight:900; margin:0 0 8px;}
+  h3{font-size:19px; font-weight:700; margin:0 0 8px;}
+  p{color:var(--text-dim); margin:0 0 14px; font-size:16px;}
+  .lead{font-size:19px; color:var(--text); max-width:620px;}
+  .section-head{margin-bottom:36px;}
+  .section-head p{max-width:640px;}
+
+  /* ---------- HERO ---------- */
+  header.hero{
+    padding:80px 20px 40px; max-width:1080px; margin:0 auto;
+    display:grid; grid-template-columns:1.1fr 0.9fr; gap:40px; align-items:center;
+  }
+  @media(max-width:820px){ header.hero{grid-template-columns:1fr;} }
+  .hero-badges{display:flex; gap:10px; flex-wrap:wrap; margin-top:22px;}
+  .hero-badges span{
+    font-size:13px; font-weight:600; padding:7px 14px; border-radius:999px;
+    border:1px solid var(--line); color:var(--text-dim); background:var(--bg-panel);
+  }
+  .hero-visual{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:18px; position:relative; overflow:hidden;
+  }
+  .hero-visual .tag{
+    position:absolute; top:16px; right:16px; background:rgba(76,224,122,0.15);
+    border:1px solid var(--green); color:var(--green); font-family:"Fredoka";
+    font-size:12px; padding:5px 12px; border-radius:999px; font-weight:600;
+  }
+
+  /* ---------- CARD GRID ---------- */
+  .grid4{display:grid; grid-template-columns:repeat(4,1fr); gap:16px;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media(max-width:760px){ .grid4{grid-template-columns:repeat(2,1fr);} .grid2{grid-template-columns:1fr;} }
+  .card{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:16px;
+    padding:22px;
+  }
+  .card .icon{
+    width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+    font-size:22px; margin-bottom:14px;
+  }
+  .card p{font-size:14px; margin:0;}
+
+  /* ---------- FLOW ---------- */
+  .flow{
+    display:flex; align-items:stretch; gap:10px; overflow-x:auto; padding:10px 4px 18px;
+  }
+  .flow-step{
+    flex:1 1 170px; min-width:160px;
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:16px;
+    padding:20px 16px; text-align:center; position:relative;
+  }
+  .flow-step .n{
+    width:30px;height:30px;border-radius:50%; margin:0 auto 12px; display:flex;align-items:center;justify-content:center;
+    font-family:"Fredoka"; font-weight:700; font-size:14px; background:var(--cyan); color:#04231f;
+  }
+  .flow-step h4{margin:0 0 6px; font-size:15px;}
+  .flow-step p{font-size:12.5px; margin:0;}
+  .flow-arrow{ align-self:center; color:var(--text-dim); font-size:22px; flex:0 0 auto; }
+
+  /* ---------- HAND DIAGRAM ---------- */
+  .hand-wrap{
+    background:#080B18; border:1px solid var(--line); border-radius:var(--radius);
+    padding:20px; display:grid; grid-template-columns:1fr 1.1fr; gap:30px; align-items:center;
+  }
+  @media(max-width:760px){ .hand-wrap{grid-template-columns:1fr;} }
+  .legend{display:flex; gap:10px; align-items:center; font-size:13px; color:var(--text-dim); margin-bottom:8px;}
+  .legend .sw{width:12px;height:12px;border-radius:50%;}
+
+  /* ---------- FINGER COMPARE ---------- */
+  .compare{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  @media(max-width:700px){ .compare{grid-template-columns:1fr;} }
+  .compare .box{background:var(--bg-panel); border:1px solid var(--line); border-radius:16px; padding:20px; text-align:center;}
+  .compare .box svg{margin:0 auto 10px;}
+
+  /* ---------- SIMULATOR ---------- */
+  .sim{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:28px; display:grid; grid-template-columns:1fr 1fr; gap:30px;
+  }
+  @media(max-width:800px){ .sim{grid-template-columns:1fr;} }
+  .toggle-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 16px; background:var(--bg-panel2); border-radius:12px; margin-bottom:10px;
+  }
+  .toggle-row label{font-size:14.5px; font-weight:500;}
+  .switch{ position:relative; width:46px; height:26px; flex-shrink:0; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .slider{
+    position:absolute; cursor:pointer; inset:0; background:#2a3157; border-radius:999px; transition:.2s;
+  }
+  .slider:before{
+    content:""; position:absolute; height:20px; width:20px; left:3px; top:3px;
+    background:white; border-radius:50%; transition:.2s;
+  }
+  input:checked + .slider{ background:var(--cyan); }
+  input:checked + .slider:before{ transform:translateX(20px); }
+  .result-box{
+    border-radius:16px; padding:24px; text-align:center;
+    background:var(--bg-panel2); border:1px solid var(--line);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+    min-height:260px;
+  }
+  .result-emoji{font-size:52px;}
+  .result-title{font-family:"Fredoka"; font-size:24px; font-weight:700;}
+  .result-desc{font-size:14px; color:var(--text-dim); max-width:280px;}
+  .rule-note{font-size:12.5px; color:var(--text-dim); background:rgba(255,255,255,0.03); border:1px dashed var(--line); border-radius:10px; padding:10px 14px; margin-top:16px;}
+
+  /* ---------- GESTURE CARDS ---------- */
+  .gcards{display:grid; grid-template-columns:repeat(4,1fr); gap:16px;}
+  @media(max-width:820px){ .gcards{grid-template-columns:repeat(2,1fr);} }
+  .gcard{border-radius:16px; padding:20px; border:1px solid var(--line);}
+  .gcard .badge{font-family:"Fredoka"; font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px; display:inline-block; margin-bottom:12px;}
+  .gcard h4{margin:0 0 6px; font-size:16px;}
+  .gcard p{font-size:13px; margin:0;}
+
+  /* ---------- CODE ---------- */
+  .codebox{
+    background:#080B18; border:1px solid var(--line); border-radius:16px; padding:22px;
+    font-family:"SFMono-Regular",Consolas,monospace; font-size:14px; overflow-x:auto; color:#D7DCF5;
+    line-height: 1.6;
+  }
+  .codebox .kw{color:var(--magenta);}
+  .codebox .cm{color:var(--text-dim); font-style:italic;}
+  .codebox .fn{color:var(--yellow);}
+  .codebox .num{color:var(--green); font-family:inherit;}
+
+  /* ---------- QUIZ ---------- */
+  .quiz-card{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:16px;
+    padding:24px; margin-bottom:18px;
+  }
+  .quiz-card h4{font-size:16px; margin:0 0 14px;}
+  .opt{
+    display:block; width:100%; text-align:left; padding:12px 16px; margin-bottom:8px;
+    background:var(--bg-panel2); border:1px solid var(--line); border-radius:10px;
+    color:var(--text); font-size:14.5px; cursor:pointer; font-family:inherit;
+  }
+  .opt:hover{border-color:var(--cyan);}
+  .opt.correct{ background:rgba(76,224,122,0.18); border-color:var(--green); }
+  .opt.wrong{ background:rgba(255,62,156,0.15); border-color:var(--magenta); }
+  .opt[disabled]{cursor:default;}
+  .quiz-footer{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:16px; padding:22px;
+  }
+  .score{font-family:"Fredoka"; font-size:22px; font-weight:700; color:var(--cyan);}
+  button.reset-btn{
+    background:var(--cyan); color:#04231f; border:none; font-weight:700; font-family:"Fredoka";
+    padding:11px 22px; border-radius:999px; cursor:pointer; font-size:14px;
+  }
+
+  /* ---------- ACTIVITY ---------- */
+  .activity{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:16px; padding:22px; margin-bottom:14px;
+    display:flex; gap:16px; align-items:flex-start;
+  }
+  .activity .num{
+    width:34px; height:34px; border-radius:10px; background:var(--bg-panel2); color:var(--yellow);
+    display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;
+  }
+  .activity textarea{
+    width:100%; margin-top:10px; background:#080B18; border:1px solid var(--line); border-radius:10px;
+    color:var(--text); padding:10px 12px; font-family:inherit; font-size:13.5px; resize:vertical; min-height:54px;
+  }
+
+  footer{
+    padding:50px 20px; text-align:center; color:var(--text-dim); font-size:13px;
+    border-top:1px solid var(--line); margin-top:20px;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="inner">
+    <div class="brand"><span class="dot"></span>FLOWDRAW 教材</div>
+    <a class="link" href="#hci">什麼是HCI</a>
+    <a class="link" href="#flow">運作流程</a>
+    <a class="link" href="#hand">手部偵測</a>
+    <a class="link" href="#gesture">手勢判斷</a>
+    <a class="link" href="#sim">手勢模擬器</a>
+    <a class="link" href="#code">程式邏輯</a>
+    <a class="link" href="#run">本機實作</a>
+    <a class="link" href="#quiz">自我測驗</a>
+    <a class="link" href="#activity">動手做</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div>
+    <span class="kicker">🖐️ 人機互動 · HCI 教材</span>
+    <h1>不用滑鼠，<br>用手勢就能畫畫？</h1>
+    <p class="lead">這份教材要帶你拆解一個真實的程式作品 <strong style="color:var(--text)">FLOWDRAW</strong>——一個只靠攝影機和手勢，就能在空中畫畫、擦除、存檔的程式。你將學到電腦怎麼「看見」手、怎麼「判斷」手勢，並親自動手模擬它的判斷邏輯。</p>
+    <div class="hero-badges">
+      <span>👀 電腦視覺</span>
+      <span>🖐️ 手部關鍵點偵測</span>
+      <span>🔀 條件判斷 if / else</span>
+      <span>🎨 人機互動 HCI</span>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <span class="tag">● DRAWING</span>
+    <svg viewBox="0 0 320 260" width="100%">
+      <rect x="0" y="0" width="320" height="260" rx="14" fill="#0E1330"/>
+      <path d="M40 200 C 80 120, 140 60, 220 90 S 280 170, 250 190" stroke="#FF3E9C" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <circle cx="250" cy="190" r="9" fill="#2FE7D9"/>
+      <circle cx="250" cy="190" r="16" fill="none" stroke="#2FE7D9" stroke-width="2" opacity="0.6"/>
+      <text x="20" y="30" fill="#9BA2C4" font-family="Fredoka" font-size="12">video_feed</text>
+    </svg>
+  </div>
+</header>
+
+<section id="hci">
+  <div class="section-head">
+    <span class="kicker">01 · 觀念</span>
+    <h2>什麼是「人機互動」？</h2>
+    <p>人機互動（Human-Computer Interaction, HCI）研究的是「人」怎麼跟「電腦／機器」溝通。以前我們用鍵盤、滑鼠跟電腦說話；現在越來越多裝置可以直接理解我們的<strong>聲音、觸控、甚至肢體動作</strong>。FLOWDRAW 就是用「手勢」跟電腦互動的例子。</p>
+  </div>
+  <div class="grid4">
+    <div class="card">
+      <div class="icon" style="background:rgba(47,231,217,0.15); color:var(--cyan);">🎤</div>
+      <h3>語音助理</h3>
+      <p>你說「明天天氣如何」，手機聽懂語音、轉成文字、再回答你。</p>
+    </div>
+    <div class="card">
+      <div class="icon" style="background:rgba(255,210,63,0.15); color:var(--yellow);">📱</div>
+      <h3>觸控螢幕</h3>
+      <p>手指滑動、點擊，螢幕感應到你的位置與動作，畫面隨之改變。</p>
+    </div>
+    <div class="card">
+      <div class="icon" style="background:rgba(255,162,76,0.15); color:var(--orange);">🎮</div>
+      <h3>體感遊戲</h3>
+      <p>攝影機或感應器捕捉你的動作，變成遊戲裡角色的動作。</p>
+    </div>
+    <div class="card">
+      <div class="icon" style="background:rgba(255,62,156,0.15); color:var(--magenta);">🖐️</div>
+      <h3>FLOWDRAW</h3>
+      <p>攝影機拍到你的手，AI 判斷手勢，決定要畫圖、擦除還是存檔。</p>
+    </div>
+  </div>
+</section>
+
+<section id="flow">
+  <div class="section-head">
+    <span class="kicker">02 · 系統流程</span>
+    <h2>FLOWDRAW 是怎麼運作的？</h2>
+    <p>程式並不是「魔法」，而是把一連串明確的步驟不斷重複執行（每秒約 30 次！）。我們可以把它拆成 5 個步驟：</p>
+  </div>
+  <div class="flow">
+    <div class="flow-step">
+      <div class="n">1</div>
+      <h4>📷 攝影機拍畫面</h4>
+      <p>持續讀取一張一張的畫面（影格）。</p>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="n">2</div>
+      <h4>🤖 AI 找出手部</h4>
+      <p>AI 模型在畫面中標出 21 個手部關鍵點座標。</p>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="n">3</div>
+      <h4>🧮 計算手指狀態</h4>
+      <p>比對座標與角度，判斷每根手指是「伸直」還是「彎曲」。</p>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="n">4</div>
+      <h4>🔀 判斷手勢種類</h4>
+      <p>用 if / else 條件式，決定現在是哪一種手勢。</p>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="n">5</div>
+      <h4>🎨 執行對應動作</h4>
+      <p>畫圖、擦除，並把結果顯示在畫面上。</p>
+    </div>
+  </div>
+  <p style="text-align:center; font-size:13px;">這 5 個步驟每秒重複約 30 次，所以你揮動手指時，畫面才會「即時」跟著你動起來。</p>
+</section>
+
+<section id="hand">
+  <div class="section-head">
+    <span class="kicker">03 · 電腦視覺</span>
+    <h2>電腦怎麼「看見」你的手？</h2>
+    <p>FLOWDRAW 使用 Google 開發的 AI 模型 <strong style="color:var(--text)">HandLandmarker</strong>。它會在畫面中的手上，標出 <strong style="color:var(--text)">21 個關鍵點</strong>（手腕、每根手指的關節與指尖），每個點都有自己的 x、y 座標。這跟程式畫面右下角你會看到的紅點綠線，其實是一樣的東西！</p>
+  </div>
+  <div class="hand-wrap">
+    <div>
+      <div class="legend"><span class="sw" style="background:#ff5d5d;"></span> 紅點 = 關鍵點（landmark）</div>
+      <div class="legend"><span class="sw" style="background:#3ddc73;"></span> 綠線 = 骨架連接</div>
+      <p style="margin-top:14px;">程式會特別關注「指尖」（例如編號 8 = 食指指尖、12 = 中指指尖）與「關節」的相對位置，來判斷手指有沒有伸直。</p>
+      <p style="font-size:13px;">💡 小知識：模型用「0」代表手腕，接著每根手指各有 4 個點，5 根手指 × 4 + 1 個手腕 = <strong style="color:var(--text)">21 個點</strong>。</p>
+    </div>
+    <svg viewBox="0 0 320 400" width="100%">
+      <g stroke="#3ddc73" stroke-width="3" stroke-linecap="round">
+        <line x1="160" y1="370" x2="110" y2="340"/>
+        <line x1="110" y1="340" x2="80" y2="300"/>
+        <line x1="80" y1="300" x2="55" y2="260"/>
+        <line x1="55" y1="260" x2="35" y2="225"/>
+        <line x1="160" y1="370" x2="115" y2="260"/>
+        <line x1="115" y1="260" x2="108" y2="205"/>
+        <line x1="108" y1="205" x2="103" y2="165"/>
+        <line x1="103" y1="165" x2="100" y2="130"/>
+        <line x1="115" y1="260" x2="150" y2="250"/>
+        <line x1="150" y1="250" x2="148" y2="190"/>
+        <line x1="148" y1="190" x2="147" y2="145"/>
+        <line x1="147" y1="145" x2="146" y2="105"/>
+        <line x1="150" y1="250" x2="185" y2="255"/>
+        <line x1="185" y1="255" x2="188" y2="195"/>
+        <line x1="188" y1="195" x2="190" y2="150"/>
+        <line x1="190" y1="150" x2="192" y2="112"/>
+        <line x1="185" y1="255" x2="215" y2="270"/>
+        <line x1="215" y1="270" x2="222" y2="225"/>
+        <line x1="222" y1="225" x2="227" y2="190"/>
+        <line x1="227" y1="190" x2="231" y2="160"/>
+        <line x1="160" y1="370" x2="215" y2="270"/>
+      </g>
+      <g fill="#ff5d5d">
+        <circle cx="160" cy="370" r="6"/>
+        <circle cx="110" cy="340" r="5"/><circle cx="80" cy="300" r="5"/><circle cx="55" cy="260" r="5"/><circle cx="35" cy="225" r="6"/>
+        <circle cx="115" cy="260" r="5"/><circle cx="108" cy="205" r="5"/><circle cx="103" cy="165" r="5"/><circle cx="100" cy="130" r="6"/>
+        <circle cx="150" cy="250" r="5"/><circle cx="148" cy="190" r="5"/><circle cx="147" cy="145" r="5"/><circle cx="146" cy="105" r="6"/>
+        <circle cx="185" cy="255" r="5"/><circle cx="188" cy="195" r="5"/><circle cx="190" cy="150" r="5"/><circle cx="192" cy="112" r="6"/>
+        <circle cx="215" cy="270" r="5"/><circle cx="222" cy="225" r="5"/><circle cx="227" cy="190" r="5"/><circle cx="231" cy="160" r="6"/>
+      </g>
+      <g fill="#F3F5FC" font-family="Fredoka" font-size="13" font-weight="600">
+        <text x="164" y="386">0</text>
+        <text x="10" y="222">4</text>
+        <text x="84" y="122">8</text>
+        <text x="130" y="97">12</text>
+        <text x="176" y="104">16</text>
+        <text x="215" y="152">20</text>
+      </g>
+    </svg>
+  </div>
+</section>
+
+<section id="finger">
+  <div class="section-head">
+    <span class="kicker">04 · 判斷邏輯</span>
+    <h2>電腦怎麼知道手指「伸直」還是「彎曲」？</h2>
+    <p>方法很簡單：<strong style="color:var(--text)">比較指尖跟關節的位置</strong>。如果指尖的 y 座標比關節「高」（在畫面上數值更小），代表手指是伸直的；如果指尖幾乎跟關節疊在一起或更低，代表手指彎曲了。握拳的判斷則更精確，是去計算每根手指彎曲的<strong style="color:var(--text)">角度</strong>，角度越大代表彎得越多。</p>
+  </div>
+  <div class="compare">
+    <div class="box">
+      <svg viewBox="0 0 160 180" width="140">
+        <line x1="80" y1="160" x2="80" y2="40" stroke="#3ddc73" stroke-width="6" stroke-linecap="round"/>
+        <circle cx="80" cy="160" r="7" fill="#ff5d5d"/>
+        <circle cx="80" cy="100" r="7" fill="#ff5d5d"/>
+        <circle cx="80" cy="40" r="8" fill="#2FE7D9"/>
+        <text x="95" y="45" fill="#F3F5FC" font-family="Fredoka" font-size="13">指尖</text>
+        <text x="95" y="105" fill="#9BA2C4" font-family="Fredoka" font-size="13">關節</text>
+      </svg>
+      <h3 style="color:var(--green);">伸直 → 指尖在上方</h3>
+      <p>指尖 y 座標 &lt; 關節 y 座標</p>
+    </div>
+    <div class="box">
+      <svg viewBox="0 0 160 180" width="140">
+        <path d="M80 160 C 40 130, 40 90, 80 95" stroke="#3ddc73" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <circle cx="80" cy="160" r="7" fill="#ff5d5d"/>
+        <circle cx="50" cy="115" r="7" fill="#ff5d5d"/>
+        <circle cx="80" cy="95" r="8" fill="#FFA24C"/>
+        <text x="90" y="90" fill="#F3F5FC" font-family="Fredoka" font-size="13">指尖</text>
+        <text x="10" y="120" fill="#9BA2C4" font-family="Fredoka" font-size="13">關節</text>
+      </svg>
+      <h3 style="color:var(--orange);">彎曲 → 指尖靠近關節</h3>
+      <p>指尖 y 座標 ≥ 關節 y 座標，或彎曲角度變大</p>
+    </div>
+  </div>
+</section>
+
+<section id="gesture">
+  <div class="section-head">
+    <span class="kicker">05 · 手勢對照表</span>
+    <h2>不同的手指組合，代表不同的指令</h2>
+    <p>FLOWDRAW 把「哪些手指伸直」轉換成 3 種狀態，每種狀態對應一個動作：</p>
+  </div>
+  <div class="gcards">
+    <div class="gcard" style="background:rgba(76,224,122,0.08); border-color:rgba(76,224,122,0.3);">
+      <span class="badge" style="background:var(--green); color:#04231f;">手勢 1</span>
+      <h4>☝️ 只伸出食指</h4>
+      <p>→ <strong style="color:var(--text)">畫圖</strong>：跟著食指指尖的位置畫線。</p>
+    </div>
+    <div class="gcard" style="background:rgba(255,162,76,0.08); border-color:rgba(255,162,76,0.3);">
+      <span class="badge" style="background:var(--orange); color:#3a1c00;">手勢 2</span>
+      <h4>✌️ 食指 + 中指</h4>
+      <p>→ <strong style="color:var(--text)">擦除</strong>：以兩指中點為中心擦掉筆劃。</p>
+    </div>
+    <div class="gcard" style="background:rgba(255,255,255,0.04); border-color:var(--line);">
+      <span class="badge" style="background:#3b4270; color:#fff;">手勢 0</span>
+      <h4>🖐️ 其他組合</h4>
+      <p>→ <strong style="color:var(--text)">待機</strong>：不符合以上規則，畫面不動作。</p>
+    </div>
+  </div>
+</section>
+
+<section id="sim">
+  <div class="section-head">
+    <span class="kicker">06 · 互動實驗室</span>
+    <h2>你來當電腦：手勢模擬器</h2>
+    <p>打開／關閉下面的開關，代表「這根手指有沒有伸直」，看看電腦會判斷出什麼手勢、觸發什麼動作。試著自己找出畫圖、擦除各需要哪些開關！</p>
+  </div>
+  <div class="sim">
+    <div>
+      <div class="toggle-row">
+        <label>☝️ 食指伸直</label>
+        <label class="switch"><input type="checkbox" id="f-index"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <label>🖕 中指伸直</label>
+        <label class="switch"><input type="checkbox" id="f-middle"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <label>💍 無名指伸直</label>
+        <label class="switch"><input type="checkbox" id="f-ring"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <label>🤙 小指伸直</label>
+        <label class="switch"><input type="checkbox" id="f-little"><span class="slider"></span></label>
+      </div>
+      <div class="rule-note">📝 提醒：程式裡「握拳」是另外用手指彎曲的<strong>角度</strong>計算出來的，跟上面 4 個「伸直」開關是分開判斷的，所以這裡特別獨立成一個開關，方便你觀察優先順序。</div>
+    </div>
+    <div class="result-box" id="result-box">
+      <div class="result-emoji" id="result-emoji">🖐️</div>
+      <div class="result-title" id="result-title" style="color:#9BA2C4;">待機中</div>
+      <div class="result-desc" id="result-desc">目前沒有手指組合符合任何手勢規則，畫面不會有動作。</div>
+    </div>
+  </div>
+</section>
+
+<section id="code">
+  <div class="section-head">
+    <span class="kicker">07 · 程式設計思維</span>
+    <h2>電腦真正的判斷方式：條件式</h2>
+    <p>上面模擬器背後的邏輯，其實就是程式裡一段「如果…而且…就…」的條件判斷（if / elif / else）。這是所有程式設計最核心的技巧之一 —— 讓程式依照不同情況做出不同反應。以下是簡化過的版本：</p>
+  </div>
+  <div class="codebox">
+<span class="kw">如果</span> 食指伸直 <span class="kw">而且</span> 中指沒伸直 <span class="kw">而且</span> 無名指沒伸直 <span class="kw">而且</span> 小指沒伸直:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># 只有食指伸直</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;手勢 = <span class="num">1</span> &nbsp;<span class="cm">→ 畫圖</span><br><br>
+<span class="kw">否則如果</span> 食指伸直 <span class="kw">而且</span> 中指伸直 <span class="kw">而且</span> 無名指沒伸直 <span class="kw">而且</span> 小指沒伸直:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># 食指 + 中指伸直</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;手勢 = <span class="num">2</span> &nbsp;<span class="cm">→ 擦除</span><br><br>
+<span class="kw">否則</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;手勢 = <span class="num">0</span> &nbsp;<span class="cm">→ 待機</span>
+  </div>
+  <p style="margin-top:16px; font-size:13.5px;">觀察重點：程式會<strong style="color:var(--text)">由上往下</strong>依序檢查每一個條件，只要符合就停止往下檢查——這就是為什麼手勢的判斷順序很重要！</p>
+</section>
+
+<section id="run">
+  <div class="section-head">
+    <span class="kicker">08 · 實作指南</span>
+    <h2>在自己電腦上動手跑起來！</h2>
+    <p>學完了原理，現在要在你自己的電腦上建立 Python 虛擬環境，並啟動這個程式。請跟著以下步驟進行：</p>
+  </div>
+
+  <div class="activity" style="align-items: stretch; flex-direction: column; gap: 20px;">
+    <div style="display: flex; gap: 16px;">
+      <div class="num">1</div>
+      <div style="flex:1;">
+        <h3>準備專案資料夾結構</h3>
+        <p>請確保你的檔案結構如下，Flask 預設會去 <code>templates</code> 尋找網頁檔案：</p>
+        <div class="codebox">
+my_flowdraw_project/<br>
+├── app.py              <span class="cm"># 後端 Python 主程式</span><br>
+├── static/             <span class="cm"># 靜態檔案資料夾（可為空）</span><br>
+└── templates/<br>
+&nbsp;&nbsp;&nbsp;&nbsp;└── index.html      <span class="cm"># 小程式</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 16px;">
+      <div class="num">2</div>
+      <div style="flex:1;">
+        <h3>建立並啟用虛擬環境 (venv)</h3>
+        <p>開啟你的終端機 (Terminal / CMD)，使用 <code>cd</code> 指令切換至專案資料夾，並執行以下指令：</p>
+        <div class="codebox">
+<span class="cm"># 1. 建立名為 venv 的虛擬環境</span><br>
+python -m venv venv<br><br>
+<span class="cm"># 2. 啟用虛擬環境 (依作業系統選擇對應指令)</span><br>
+<span class="kw">Windows (CMD):</span> venv\Scripts\activate<br>
+<span class="kw">Windows (PowerShell):</span> .\venv\Scripts\Activate.ps1<br>
+<span class="kw">macOS / Linux:</span> source venv/bin/activate
+        </div>
+        <p style="margin-top:8px; font-size:13px; color: var(--yellow);">💡 提示：啟用成功後，終端機提示字元的最前方會出現 <strong style="color: #fff;">(venv)</strong> 的標記！</p>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 16px;">
+      <div class="num">3</div>
+      <div style="flex:1;">
+        <h3>安裝依賴套件</h3>
+        <p>在啟用虛擬環境的狀態下，直接複製並執行以下指令，安裝 Flask、OpenCV 與 MediaPipe 等套件：</p>
+        <div class="codebox">
+pip install --upgrade pip<br>
+pip install -r requirements.txt  
+        </div>
+        <p style="margin-top:8px; font-size:13px; color: var(--text-dim);"> 提醒：第一次執行時程式會自動從網路下載約 8MB 的手部偵測模型。需花一點時間</p>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 16px;">
+      <div class="num">4</div>
+      <div style="flex:1;">
+        <h3>啟動 FLOWDRAW 程式</h3>
+        <p>萬事俱備！輸入啟動指令，並打開瀏覽器享受隔空畫畫的樂趣吧：</p>
+        <div class="codebox">
+python app.py
+        </div>
+        <p style="margin-top:12px; font-size:15px;">按住ctrl/cmd點擊：<a href="http://127.0.0.1:5000" target="_blank" style="color:var(--cyan); font-weight: bold; text-decoration: underline;">http://127.0.0.1:5000</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="quiz">
+  <div class="section-head">
+    <span class="kicker">09 · 自我測驗</span>
+    <h2>檢查一下你學會了嗎？</h2>
+    <p>回答以下 5 題，每題只有一次選擇機會，選完就會立刻顯示答對或答錯。</p>
+  </div>
+  <div id="quiz-list"></div>
+  <div class="quiz-footer">
+    <div>目前得分：<span class="score"><span id="score-num">0</span> / 5</span></div>
+    <button class="reset-btn" id="reset-quiz">重新測驗</button>
+  </div>
+</section>
+
+<section id="activity">
+  <div class="section-head">
+    <span class="kicker">10 · 動手做 / 小組討論</span>
+    <h2>換你來設計手勢功能</h2>
+    <p>分組討論下面的問題，寫下你們的想法。沒有標準答案，重點是練習「用條件式思考」！</p>
+  </div>
+  <div class="activity">
+    <div class="num">1</div>
+    <div style="flex:1;">
+      <h3>設計「換色」手勢</h3>
+      <p>如果要新增一個「食指、中指、無名指都伸直」代表換筆刷顏色的手勢，請寫出你的「如果…而且…就…」判斷句。</p>
+      <textarea placeholder="在這裡寫下你的答案…"></textarea>
+    </div>
+  </div>
+  <div class="activity">
+    <div class="num">2</div>
+    <div style="flex:1;">
+      <h3>支援雙手畫畫</h3>
+      <p>目前程式只偵測一隻手（num_hands=1）。如果想讓程式同時支援兩隻手一起畫圖，你覺得程式邏輯需要修改哪些地方？</p>
+      <textarea placeholder="在這裡寫下你的答案…"></textarea>
+    </div>
+  </div>
+  <div class="activity">
+    <div class="num">3</div>
+    <div style="flex:1;">
+      <h3>解決誤判問題</h3>
+      <p>如果手指沒有完全伸直，可能被誤判成別的手勢，你會怎麼改善這個問題？（提示：可以想想「容錯範圍」）</p>
+      <textarea placeholder="在這裡寫下你的答案…"></textarea>
+    </div>
+  </div>
+  <div class="activity">
+    <div class="num">4</div>
+    <div style="flex:1;">
+      <h3>生活中的手勢應用</h3>
+      <p>除了畫畫，你還能想到哪些场合適合用「手勢辨識」來操作？請至少寫出 2 個例子。</p>
+      <textarea placeholder="在這裡寫下你的答案…"></textarea>
+    </div>
+  </div>
+</section>
+
+<footer>
+  本教材改編自 FLOWDRAW（Flask + OpenCV + MediaPipe HandLandmarker）程式專案，用於課堂人機互動概念教學。
+</footer>
+
+<script>
+  // ---------- Simulator ----------
+  const ids = ['f-index','f-middle','f-ring','f-little'];
+  const els = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
+  const emojiEl = document.getElementById('result-emoji');
+  const titleEl = document.getElementById('result-title');
+  const descEl  = document.getElementById('result-desc');
+  const boxEl   = document.getElementById('result-box');
+
+  function updateSim(){
+    const idx = els['f-index'].checked;
+    const mid = els['f-middle'].checked;
+    const rng = els['f-ring'].checked;
+    const lit = els['f-little'].checked;
+
+    let gesture = 0;
+    if (idx && !mid && !rng && !lit) gesture = 1;
+    else if (idx && mid && !rng && !lit) gesture = 2;
+    else gesture = 0; 
+
+    const map = {
+      0: {emoji:'🖐️', title:'待機中', color:'#9BA2C4', desc:'目前沒有手指組合符合任何手勢規則，畫面不會有動作。'},
+      1: {emoji:'🎨', title:'畫圖 DRAWING', color:'#4CE07A', desc:'符合「只有食指伸直」規則 → 跟著食指指尖畫線。'},
+      2: {emoji:'🧽', title:'擦除 ERASING', color:'#FFA24C', desc:'符合「食指 + 中指伸直」規則 → 以兩指中點擦除筆劃。'},
+    };
+    const r = map[gesture];
+    emojiEl.textContent = r.emoji;
+    titleEl.textContent = r.title;
+    titleEl.style.color = r.color;
+    descEl.textContent = r.desc;
+    boxEl.style.borderColor = r.color;
+  }
+  ids.forEach(id => els[id].addEventListener('change', updateSim));
+  updateSim();
+
+  // ---------- Quiz ----------
+  const questions = [
+    {
+      q: "FLOWDRAW 主要利用什麼技術讓電腦「看到」你的手？",
+      opts: ["觸控螢幕感應", "攝影機 + AI 手部辨識模型", "滑鼠感應器", "藍牙訊號"],
+      correct: 1
+    },
+    {
+      q: "程式裡，電腦怎麼判斷一根手指是「伸直」還是「彎曲」？",
+      opts: ["詢問使用者", "比較指尖與關節的座標位置（或角度）", "用顏色深淺判斷", "隨機決定"],
+      correct: 1
+    },
+    {
+      q: "在 FLOWDRAW 的設計中，只伸出食指代表哪個動作？",
+      opts: ["擦除", "存檔", "畫圖", "換背景"],
+      correct: 2
+    },
+    {
+      q: "「如果食指伸直，而且中指沒有伸直，就畫圖」這種寫法，在程式設計中稱為什麼？",
+      opts: ["迴圈（loop）", "條件判斷（if / else）", "變數（variable）", "函式呼叫（function call）"],
+      correct: 1
+    },
+    {
+      q: "讓人類的動作被電腦理解、進而產生對應回應的技術領域，稱為？",
+      opts: ["資料庫管理", "網路安全", "人機互動（HCI）", "雲端運算"],
+      correct: 2
+    }
+  ];
+
+  let score = 0;
+  const quizList = document.getElementById('quiz-list');
+  const scoreNum = document.getElementById('score-num');
+
+  function buildQuiz(){
+    quizList.innerHTML = '';
+    score = 0;
+    scoreNum.textContent = '0';
+    questions.forEach((item, qi) => {
+      const card = document.createElement('div');
+      card.className = 'quiz-card';
+      const h4 = document.createElement('h4');
+      h4.textContent = `第 ${qi+1} 題．${item.q}`;
+      card.appendChild(h4);
+      item.opts.forEach((opt, oi) => {
+        const btn = document.createElement('button');
+        btn.className = 'opt';
+        btn.textContent = opt;
+        btn.addEventListener('click', () => {
+          const buttons = card.querySelectorAll('.opt');
+          buttons.forEach(b => b.disabled = true);
+          if (oi === item.correct){
+            btn.classList.add('correct');
+            score++;
+            scoreNum.textContent = score;
+          } else {
+            btn.classList.add('wrong');
+            buttons[item.correct].classList.add('correct');
+          }
+        });
+        card.appendChild(btn);
+      });
+      quizList.appendChild(card);
+    });
+  }
+  document.getElementById('reset-quiz').addEventListener('click', buildQuiz);
+  buildQuiz();
+</script>
+
+</body>
+</html>
