@@ -2,7 +2,6 @@
 """
 FLOWDRAW - Python 版本 (Flask + OpenCV + MediaPipe)
 
-這是原本 scriptent.js / strokes.js 的 Python 移植版本。
 架構說明：
   - 攝影機擷取與手部追蹤、手勢判斷、筆劃繪製全部在「伺服器端」用 Python 完成
     （OpenCV 抓攝影機畫面 + MediaPipe **Tasks API** 的 HandLandmarker 做手部關鍵點偵測）
@@ -10,10 +9,6 @@ FLOWDRAW - Python 版本 (Flask + OpenCV + MediaPipe)
   - 瀏覽器端的按鈕（清除、筆刷大小、顏色、下載）改成呼叫後端的 REST API
 
 ⚠️ 關於 mediapipe 版本：
-  Google 從 mediapipe 0.10.30 版起移除了舊版 `mp.solutions.hands` API，
-  而且 0.10.30 以前的版本又沒有替 Python 3.13 以上發布安裝包，
-  所以這裡改用官方目前持續維護、支援新版 Python 的 **Tasks API**
-  （`mediapipe.tasks.python.vision.HandLandmarker`）。
   第一次執行時程式會自動從 Google 官方下載一個約 8MB 的模型檔到
   `models/hand_landmarker.task`（需要網路），之後就會直接用快取檔，
   不會重複下載。如果上課現場沒有網路，記得**提前在有網路的地方跑過一次**，
@@ -26,16 +21,6 @@ FLOWDRAW - Python 版本 (Flask + OpenCV + MediaPipe)
     2. 或是部署在一台有攝影機、且你想讓所有連進來的人共用同一支攝影機畫面的機器上
   如果你要「每個瀏覽器使用者用自己的攝影機」，那必須改用 WebRTC 把畫面從
   瀏覽器傳到後端（複雜很多），這份程式碼沒有做這件事。
-
-  另外，原始 JS 版本用了 assets/draw.png、erase.png、fist.png 等圖示，
-  這裡沒有那些檔案，所以改用 cv2.putText / 色塊 在畫面上顯示目前狀態
-  （之後你可以自行把圖示疊到 frame 上，我在 draw_state_overlay() 裡有留註解位置）。
-
-📝 說明：握拳 (手勢 3) 觸發時，會在伺服器端把當下畫面(含筆劃)編碼成 PNG，
-  暫存在 processor.last_saved_png 裡；「Download Image」按鈕按下時，才會把這張
-  暫存的 PNG 真正傳送給瀏覽器下載。因為 MJPEG 串流架構下，伺服器無法主動把檔案
-  推播、觸發瀏覽器下載，所以「握拳 = 準備好圖片」「按下載鈕 = 真正下載」是這個
-  架構下維持的合理設計，這裡沒有更動這部分的行為。
 """
 
 import io
@@ -53,7 +38,7 @@ from mediapipe.tasks.python import vision as mp_tasks_vision
 from flask import Flask, Response, request, jsonify, render_template, send_file
 
 # ----------------------------------------------------------------------------
-# 對應 scriptent.js 裡的 `fingers` 常數表
+# `fingers` 常數表
 # ----------------------------------------------------------------------------
 FINGERS = {
     "index1": 8, "index2": 7, "index3": 6, "index4": 5,
@@ -66,7 +51,7 @@ FINGERS = {
 ERASE_RADIUS = 40
 
 # ----------------------------------------------------------------------------
-# 新版 mediapipe Tasks API 用的 21 個手部關鍵點連線（畫骨架用），
+# mediapipe Tasks API 用的 21 個手部關鍵點連線（畫骨架用），
 # 對應舊版 mp.solutions.hands.HAND_CONNECTIONS 的內容（新版套件已不再提供這個常數）
 # ----------------------------------------------------------------------------
 HAND_CONNECTIONS = [
@@ -241,15 +226,15 @@ class StrokeList:
 
 # ----------------------------------------------------------------------------
 # gesture()：對應 scriptent.js 的 gesture()
-#   0: 沒事 / 1: 食指(畫圖) / 2: 食指+中指(擦除) / 3: 握拳(儲存) / 4: 三指(切換背景)
+#   0: 沒事 / 1: 食指(畫圖) / 2: 食指+中指(擦除) 
 # ----------------------------------------------------------------------------
 def gesture(finger_state):
     if finger_state["index"] and not finger_state["middle"] and not finger_state["ring"] and not finger_state["little"]:
         return 1
     if finger_state["index"] and finger_state["middle"] and not finger_state["ring"] and not finger_state["little"]:
         return 2
-    if finger_state["isFist"]:
-        return 3
+    # if finger_state["isFist"]:
+    #     return 3
     # if finger_state["index"] and finger_state["middle"] and finger_state["ring"] and not finger_state["little"]:
     #     return 4
     return 0
@@ -314,7 +299,7 @@ class VideoProcessor:
         self.thread.start()
         print("[VideoProcessor] 背景擷取執行緒已啟動", flush=True)
 
-    # -- 對應 processHands()：改吃新版 Tasks API 的 HandLandmarkerResult --
+    # -- 對應 processHands()：改為新版 Tasks API 的 HandLandmarkerResult --
     def _process_hands(self, result, frame):
         if result.hand_landmarks:
             lm = result.hand_landmarks[0]  # 只取第一隻手（num_hands=1）
@@ -418,18 +403,18 @@ class VideoProcessor:
             # 要讓瀏覽器真正下載到本機，還是要按下頁面上的「Download Image」按鈕，
             # 因為 MJPEG 串流架構下，伺服器無法主動觸發瀏覽器下載檔案。
             # 1. 先將所有筆劃與疊圖畫在 frame 上
-            self.stroke_list.draw(frame)
-            self._draw_state_overlay(frame, gest)
+            #self.stroke_list.draw(frame)
+            #self._draw_state_overlay(frame, gest)
 
             # 2. 畫完之後，立刻更新最新畫面 (最新畫面現在有筆劃了！)
-            with self.frame_lock:
-                self.latest_frame = frame
+            #with self.frame_lock:
+            #    self.latest_frame = frame
 
             # 3. 此時如果偵測到握拳 (手勢 3)，拿這個「已經畫好筆劃」的 frame 去存檔！
-            if gest == 3 and not self.save_cooldown:
-                self.save_cooldown = True
-                self._save_snapshot(frame)  # 這裡傳入的 frame 已經包含完整的筆痕了！
-                threading.Timer(2.0, self._reset_save_cooldown).start()
+            # if gest == 3 and not self.save_cooldown:
+            #     self.save_cooldown = True
+            #     self._save_snapshot(frame)  # 這裡傳入的 frame 已經包含完整的筆痕了！
+            #     threading.Timer(2.0, self._reset_save_cooldown).start()
             time.sleep(1 / 30)
 
     def _reset_bg_cooldown(self):
