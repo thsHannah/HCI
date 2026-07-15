@@ -4,13 +4,7 @@
 用 **Flask + OpenCV + MediaPipe** 在伺服器端做攝影機擷取、手部追蹤、手勢判斷與畫圖，
 再把處理好的畫面以 MJPEG 串流方式送到瀏覽器的 `<img>` 標籤顯示。
 
-## ⚠️ 關於 Python 版本與 mediapipe API（給老師/助教看）
-
-Google 從 **mediapipe 0.10.30** 版起移除了舊版 `mp.solutions.hands` API，而 0.10.30 以前的版本
-**沒有替 Python 3.13／3.14 發布安裝包**。因為這次是要給學生在 Python 3.13/3.14 環境用，
-所以本專案已經改用官方目前持續維護、支援新版 Python 的 **Tasks API**
-（`mediapipe.tasks.python.vision.HandLandmarker`），不會再出現
-`AttributeError: module 'mediapipe' has no attribute 'solutions'` 這個錯誤。
+##  關於 Python 版本與 mediapipe API（給老師/助教看）
 
 **第一次執行需要網路**：程式會自動從 Google 官方下載一個約 8MB 的手部偵測模型檔到
 `models/hand_landmarker.task`，下載一次後就會快取，之後離線也能跑。
@@ -34,14 +28,12 @@ python app.py
 
 然後用瀏覽器打開 **http://127.0.0.1:5000**
 
-## 手勢對照（跟原本 JS 版一致）
+## 手勢對照
 
 | 手勢 | 動作 |
 |---|---|
 | 只有食指伸直 | 畫圖 |
 | 食指 + 中指伸直 | 擦除 |
-| 握拳（所有手指彎曲角度 ≥ 50°）| 儲存目前畫面成 PNG |
-| 食指 + 中指 + 無名指伸直 | 切換背景（目前只做冷卻計時，背景圖片邏輯需自行擴充） |
 
 ## 檔案對照表
 
@@ -50,7 +42,6 @@ python app.py
 | `fingers` 常數 | `FINGERS` dict |
 | `vector2DAngle()` | `vector2d_angle()` |
 | `calculateFingerAngles()` | `calculate_finger_angles()` |
-| `isFist()` | `is_fist()` |
 | `gesture()` | `gesture()` |
 | `class Point` | `class Point` |
 | `class StrokeList` | `class StrokeList` |
@@ -58,7 +49,7 @@ python app.py
 | `download_points()` | `/api/download_points` |
 | `init()` / `process()` / `processHands()` | `VideoProcessor` 類別 + 背景執行緒 `_loop()`（手部偵測用新版 Tasks API `HandLandmarker`，非舊版 `mp.solutions.hands`）|
 
-## ⚠️ 重要限制（跟原本 JS 版本本質上的差異）
+## 重要限制
 
 1. **攝影機來源不同**：原本 JS 版用瀏覽器的 `getUserMedia()`，抓的是「使用者自己」的攝影機，
    畫面完全不會離開使用者電腦。這個 Python 版改成 `cv2.VideoCapture(0)`，抓的是
